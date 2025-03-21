@@ -9,7 +9,6 @@ type Props = NavigationProps<"Result">;
 export function ResultScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
   const { state } = useApp();
-  const { studySessionId } = route.params;
 
   const styles = StyleSheet.create({
     container: {
@@ -49,12 +48,37 @@ export function ResultScreen({ navigation, route }: Props) {
     },
   });
 
-  // 仮の学習結果データ
-  const results = {
-    totalCards: 10,
-    correctCount: 7,
-    accuracy: 70,
+  const calculateResults = () => {
+    if (!state.progress) {
+      return {
+        totalCards: 0,
+        correctCount: 0,
+        accuracy: 0,
+      };
+    }
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayProgress = state.progress.cardProgress.filter(
+      (progress) => new Date(progress.lastReviewed) >= todayStart
+    );
+
+    const correctCount = todayProgress.filter(
+      (progress) => progress.status === "correct"
+    ).length;
+
+    return {
+      totalCards: todayProgress.length,
+      correctCount,
+      accuracy:
+        todayProgress.length > 0
+          ? Math.round((correctCount / todayProgress.length) * 100)
+          : 0,
+    };
   };
+
+  const results = calculateResults();
 
   return (
     <View style={styles.container}>

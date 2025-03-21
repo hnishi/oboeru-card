@@ -1,14 +1,21 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Animated } from "react-native";
-import { Text, IconButton, Button, useTheme } from "react-native-paper";
+import React, { useState, useCallback } from "react";
+import { View, StyleSheet } from "react-native";
+import {
+  Text,
+  IconButton,
+  Button,
+  useTheme,
+  ActivityIndicator,
+} from "react-native-paper";
 import { NavigationProps } from "../types/navigation";
 import { useApp } from "../contexts/AppContext";
+import { Flashcard } from "../types/models";
 
 type Props = NavigationProps<"CardStudy">;
 
 export function CardStudyScreen({ navigation, route }: Props) {
   const { colors } = useTheme();
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const { groupId } = route.params;
 
   const [isFlipped, setIsFlipped] = useState(false);
@@ -44,6 +51,12 @@ export function CardStudyScreen({ navigation, route }: Props) {
       fontSize: 18,
       textAlign: "center",
     },
+    explanationText: {
+      fontSize: 14,
+      color: colors.secondary,
+      marginTop: 16,
+      textAlign: "center",
+    },
     controls: {
       flexDirection: "row",
       justifyContent: "space-around",
@@ -54,26 +67,57 @@ export function CardStudyScreen({ navigation, route }: Props) {
       marginBottom: 16,
       color: colors.secondary,
     },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
   });
 
-  // 仮のフラッシュカードデータ
-  const cards = [
-    {
-      id: "1",
-      question: "Pega Platform とは何か？",
-      answer:
-        "ローコード開発プラットフォームで、ビジネスプロセス管理（BPM）とカスタマーエンゲージメントを実現するためのツール",
+  if (state.isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  const groupCards = state.flashcards.filter(
+    (card) => card.groupId === groupId
+  );
+  const currentGroup = state.groups.find((group) => group.id === groupId);
+
+  if (groupCards.length === 0) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Text>カードが見つかりません</Text>
+      </View>
+    );
+  }
+
+  const handleAnswer = useCallback(
+    (isCorrect: boolean) => {
+      const currentCard = groupCards[currentIndex];
+
+      // 進捗を更新
+      dispatch({
+        type: "UPDATE_CARD_PROGRESS",
+        payload: {
+          cardId: currentCard.id,
+          isCorrect,
+        },
+      });
+
+      // 設定に応じて自動で次のカードに進む
+      if (state.settings.autoProgress) {
+        handleNext();
+      }
     },
-    {
-      id: "2",
-      question: "Case Management とは？",
-      answer:
-        "ビジネスプロセスを管理・追跡するための機能で、作業の進捗状況や関連データを一元管理する仕組み",
-    },
-  ];
+    [currentIndex, groupCards, dispatch, state.settings.autoProgress]
+  );
 
   const handleNext = () => {
-    if (currentIndex < cards.length - 1) {
+    if (currentIndex < groupCards.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setIsFlipped(false);
     } else {
@@ -88,23 +132,26 @@ export function CardStudyScreen({ navigation, route }: Props) {
     }
   };
 
-  const currentCard = cards[currentIndex];
+  const currentCard = groupCards[currentIndex];
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-        <Text style={styles.headerText}>Pega CSA</Text>
+        <Text style={styles.headerText}>{currentGroup?.name}</Text>
       </View>
 
       <Text style={styles.progressText}>
-        {currentIndex + 1} / {cards.length}
+        {currentIndex + 1} / {groupCards.length}
       </Text>
 
       <View style={styles.card} onTouchEnd={() => setIsFlipped(!isFlipped)}>
         <Text style={styles.cardText}>
           {isFlipped ? currentCard.answer : currentCard.question}
         </Text>
+        {isFlipped && currentCard.explanation && (
+          <Text style={styles.explanationText}>{currentCard.explanation}</Text>
+        )}
       </View>
 
       <View style={styles.controls}>
@@ -113,28 +160,16 @@ export function CardStudyScreen({ navigation, route }: Props) {
           onPress={handlePrevious}
           disabled={currentIndex === 0}
         />
-        <Button
-          mode="contained"
-          onPress={() => {
-            // 正解として記録
-            handleNext();
-          }}
-        >
+        <Button mode="contained" onPress={() => handleAnswer(true)}>
           覚えた
         </Button>
-        <Button
-          mode="outlined"
-          onPress={() => {
-            // 不正解として記録
-            handleNext();
-          }}
-        >
+        <Button mode="outlined" onPress={() => handleAnswer(false)}>
           まだ
         </Button>
         <IconButton
           icon="arrow-right"
           onPress={handleNext}
-          disabled={currentIndex === cards.length - 1}
+          disabled={currentIndex === groupCards.length - 1}
         />
       </View>
     </View>

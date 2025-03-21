@@ -1,6 +1,12 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Text, Card, useTheme, FAB } from "react-native-paper";
+import {
+  Text,
+  Card,
+  useTheme,
+  FAB,
+  ActivityIndicator,
+} from "react-native-paper";
 import { NavigationProps } from "../types/navigation";
 import { useApp } from "../contexts/AppContext";
 
@@ -48,51 +54,76 @@ export function HomeScreen({ navigation }: Props) {
       right: 0,
       bottom: 0,
     },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
   });
 
-  // 仮のフラッシュカードグループデータ
-  const cardGroups = [
-    {
-      id: "pega-csa",
-      name: "Pega Certified System Architect",
-      totalCards: 50,
-      completedCards: 0,
-    },
-  ];
+  if (state.isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  const getGroupProgress = (groupId: string) => {
+    if (!state.progress || !state.flashcards) return { completed: 0, total: 0 };
+
+    const groupCards = state.flashcards.filter(
+      (card) => card.groupId === groupId
+    );
+    const completedCards = state.progress.cardProgress.filter(
+      (progress) =>
+        progress.status === "correct" &&
+        groupCards.some((card) => card.id === progress.cardId)
+    );
+
+    return {
+      completed: completedCards.length,
+      total: groupCards.length,
+    };
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>おぼえるカード</Text>
       </View>
-      {cardGroups.map((group) => (
-        <Card
-          key={group.id}
-          style={styles.card}
-          onPress={() =>
-            navigation.navigate("CardStudy", { groupId: group.id })
-          }
-        >
-          <Card.Title title={group.name} />
-          <Card.Content>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${
-                      (group.completedCards / group.totalCards) * 100
-                    }%`,
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.progressText}>
-              進捗: {group.completedCards}/{group.totalCards} カード
-            </Text>
-          </Card.Content>
-        </Card>
-      ))}
+
+      {state.groups.map((group) => {
+        const progress = getGroupProgress(group.id);
+
+        return (
+          <Card
+            key={group.id}
+            style={styles.card}
+            onPress={() =>
+              navigation.navigate("CardStudy", { groupId: group.id })
+            }
+          >
+            <Card.Title title={group.name} />
+            <Card.Content>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${(progress.completed / progress.total) * 100}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressText}>
+                進捗: {progress.completed}/{progress.total} カード
+              </Text>
+            </Card.Content>
+          </Card>
+        );
+      })}
+
       <FAB
         icon="cog"
         style={styles.fab}
