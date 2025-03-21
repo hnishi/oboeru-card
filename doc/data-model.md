@@ -20,7 +20,7 @@ interface Flashcard {
   question: string; // 問題文
   answer: string; // 解答
   explanation: string; // 解説
-  groupIds: string[]; // 所属するグループのID配列
+  groupId: string; // 所属するグループのID
   createdAt: string; // 作成日時（ISO 8601形式）
   updatedAt: string; // 更新日時（ISO 8601形式）
 }
@@ -28,13 +28,13 @@ interface Flashcard {
 
 ### 2.2 グループ（Group）
 
-問題カードのカテゴリーや資格種別を管理するモデルです。
+フラッシュカードをグループ化する単位です。資格や学習テーマごとに作成します。
 
 ```typescript
 interface Group {
-  groupId: string; // グループ固有のID
-  name: string; // グループ名
-  parentGroupId: string | null; // 親グループのID（トップレベルの場合はnull）
+  id: string; // グループ固有のID
+  name: string; // グループ名（例: "Pega Certified System Architect"）
+  totalCards: number; // グループ内のカード総数
   createdAt: string; // 作成日時（ISO 8601形式）
   updatedAt: string; // 更新日時（ISO 8601形式）
 }
@@ -64,7 +64,6 @@ interface Progress {
 
 ```mermaid
 erDiagram
-    Group ||--o{ Group : "親子関係"
     Group ||--o{ Flashcard : "所属"
     Flashcard ||--o{ Progress : "学習記録"
     Progress }|--|| User : "所有"
@@ -98,6 +97,6 @@ erDiagram
 
 ### 5.2 データ整合性
 
-- グループの親子関係は循環参照不可
+- フラッシュカードは必ず 1 つのグループに所属
 - 存在しないグループ ID は参照不可
 - 全てのタイムスタンプは UTC 形式で保存
