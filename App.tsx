@@ -11,6 +11,39 @@ import { RootStackParamList } from "./src/types/navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const screenOptions = {
+  headerShown: false,
+  animation: "slide_from_right" as const,
+  gestureEnabled: true,
+  gestureDirection: "horizontal" as const,
+  animationDuration: 250,
+  presentation: "card" as const,
+  transitionSpec: {
+    open: {
+      animation: "spring",
+      config: {
+        damping: 20,
+        mass: 1,
+        stiffness: 100,
+        overshootClamping: false,
+        restDisplacementThreshold: 0.01,
+        restSpeedThreshold: 0.01,
+      },
+    },
+    close: {
+      animation: "spring",
+      config: {
+        damping: 20,
+        mass: 1,
+        stiffness: 100,
+        overshootClamping: false,
+        restDisplacementThreshold: 0.01,
+        restSpeedThreshold: 0.01,
+      },
+    },
+  },
+};
+
 export default function App() {
   return (
     <AppProvider>
@@ -18,15 +51,31 @@ export default function App() {
         <NavigationContainer>
           <Stack.Navigator
             initialRouteName="Home"
-            screenOptions={{
-              headerShown: false,
-              animation: "slide_from_right",
-            }}
+            screenOptions={screenOptions}
           >
             <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="CardStudy" component={CardStudyScreen} />
-            <Stack.Screen name="Result" component={ResultScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen
+              name="CardStudy"
+              component={CardStudyScreen}
+              options={{
+                animation: "slide_from_bottom",
+              }}
+            />
+            <Stack.Screen
+              name="Result"
+              component={ResultScreen}
+              options={{
+                animation: "fade_from_bottom",
+              }}
+            />
+            <Stack.Screen
+              name="Settings"
+              component={SettingsScreen}
+              options={{
+                animation: "slide_from_right",
+                presentation: "modal",
+              }}
+            />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>

@@ -9,7 +9,7 @@ import {
 } from "react-native-paper";
 import { NavigationProps } from "../types/navigation";
 import { useApp } from "../contexts/AppContext";
-import { Flashcard } from "../types/models";
+import { FlashCard } from "../components/FlashCard";
 
 type Props = NavigationProps<"CardStudy">;
 
@@ -37,25 +37,6 @@ export function CardStudyScreen({ navigation, route }: Props) {
       fontWeight: "bold",
       color: colors.primary,
       marginLeft: 8,
-    },
-    card: {
-      flex: 1,
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 16,
-      marginBottom: 16,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    cardText: {
-      fontSize: 18,
-      textAlign: "center",
-    },
-    explanationText: {
-      fontSize: 14,
-      color: colors.secondary,
-      marginTop: 16,
-      textAlign: "center",
     },
     controls: {
       flexDirection: "row",
@@ -145,14 +126,14 @@ export function CardStudyScreen({ navigation, route }: Props) {
         {currentIndex + 1} / {groupCards.length}
       </Text>
 
-      <View style={styles.card} onTouchEnd={() => setIsFlipped(!isFlipped)}>
-        <Text style={styles.cardText}>
-          {isFlipped ? currentCard.answer : currentCard.question}
-        </Text>
-        {isFlipped && currentCard.explanation && (
-          <Text style={styles.explanationText}>{currentCard.explanation}</Text>
-        )}
-      </View>
+      <FlashCard
+        question={currentCard.question}
+        answer={currentCard.answer}
+        explanation={currentCard.explanation}
+        isFlipped={isFlipped}
+        onFlip={() => setIsFlipped(!isFlipped)}
+        showAnimation={state.settings.cardAnimation}
+      />
 
       <View style={styles.controls}>
         <IconButton
